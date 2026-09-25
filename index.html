@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Frog Home</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Noto Sans JP",
+        sans-serif;
+}
+
+/* =========================
+   カエル画面
+========================= */
+
+#frog {
+    position: fixed;
+    inset: 0;
+
+    width: 100vw;
+    height: 100vh;
+
+    border: 0;
+}
+
+
+/* =========================
+   通知スペース
+========================= */
+
+#notification {
+
+    position: fixed;
+
+    top: 18px;
+    right: 18px;
+
+    width: 300px;
+
+    padding: 12px 15px;
+
+    background: rgba(30, 30, 30, 0.58);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    border: 1px solid rgba(255,255,255,0.10);
+
+    border-radius: 16px;
+
+    color: white;
+
+    z-index: 100;
+
+    box-shadow:
+        0 5px 20px rgba(0,0,0,0.18);
+
+    transition:
+        opacity .3s ease,
+        transform .3s ease;
+}
+
+
+/* 通知なし */
+
+.no-notification {
+
+    color:
+        rgba(255,255,255,0.55);
+
+    font-size: 13px;
+
+    text-align: center;
+
+    padding: 2px 0;
+}
+
+
+/* =========================
+   通知あり
+========================= */
+
+.notification-header {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+.notification-icon {
+
+    width: 32px;
+    height: 32px;
+
+    flex-shrink: 0;
+
+    border-radius: 9px;
+
+    background:
+        rgba(255,255,255,0.10);
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 14px;
+}
+
+.notification-text {
+
+    min-width: 0;
+
+    flex: 1;
+}
+
+.notification-app {
+
+    font-size: 10px;
+
+    color:
+        rgba(255,255,255,0.55);
+
+    margin-bottom: 2px;
+}
+
+.notification-title {
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+.notification-body {
+
+    margin-top: 7px;
+
+    font-size: 12px;
+
+    line-height: 1.4;
+
+    color:
+        rgba(255,255,255,0.78);
+
+    word-break: break-word;
+}
+
+.notification-time {
+
+    font-size: 9px;
+
+    color:
+        rgba(255,255,255,0.40);
+
+    align-self: flex-start;
+}
+
+
+/* =========================
+   スマホ画面
+========================= */
+
+@media(max-width:600px) {
+
+    #notification {
+
+        top: 10px;
+        right: 10px;
+
+        width:
+            calc(100vw - 20px);
+    }
+}
+</style>
+</head>
+
+<body>
+
+
+<!-- =========================
+     カエルを全画面表示
+========================= -->
+
+<iframe
+    id="frog"
+    src="https://weather.r0rt1z2.com/"
+    allowfullscreen>
+</iframe>
+
+
+<!-- =========================
+     通知スペース
+========================= -->
+
+<div id="notification">
+
+    <!-- 初期状態 -->
+    <div class="no-notification">
+        通知はありません
+    </div>
+
+</div>
+
+
+<script>
+
+/* =====================================
+   通知を表示
+===================================== */
+
+function showNotification(data) {
+
+    const box =
+        document.getElementById(
+            "notification"
+        );
+
+    const app =
+        data.app || "通知";
+
+    const title =
+        data.title || "新しい通知";
+
+    const body =
+        data.body || "";
+
+    const icon =
+        data.icon || "●";
+
+    const time =
+        new Date().toLocaleTimeString(
+            "ja-JP",
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+
+    box.innerHTML = `
+
+        <div class="notification-header">
+
+            <div class="notification-icon">
+                ${escapeHTML(icon)}
+            </div>
+
+            <div class="notification-text">
+
+                <div class="notification-app">
+                    ${escapeHTML(app)}
+                </div>
+
+                <div class="notification-title">
+                    ${escapeHTML(title)}
+                </div>
+
+            </div>
+
+            <div class="notification-time">
+                ${time}
+            </div>
+
+        </div>
+
+        ${
+            body
+            ?
+            `
+            <div class="notification-body">
+                ${escapeHTML(body)}
+            </div>
+            `
+            :
+            ""
+        }
+
+    `;
+
+}
+
+
+/* =====================================
+   通知なしに戻す
+===================================== */
+
+function clearNotification() {
+
+    const box =
+        document.getElementById(
+            "notification"
+        );
+
+    box.innerHTML = `
+        <div class="no-notification">
+            通知はありません
+        </div>
+    `;
+
+}
+
+
+/* =====================================
+   URLパラメータから通知を受信
+
+   例：
+
+   ?title=テスト通知
+   &body=これはテストです
+===================================== */
+
+function checkURLNotification() {
+
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    const title =
+        params.get("title");
+
+    const body =
+        params.get("body");
+
+    const app =
+        params.get("app");
+
+    const icon =
+        params.get("icon");
+
+
+    if (title || body || app) {
+
+        showNotification({
+
+            app:
+                app || "MacroDroid",
+
+            title:
+                title || "新しい通知",
+
+            body:
+                body || "",
+
+            icon:
+                icon || "M"
+
+        });
+
+    } else {
+
+        clearNotification();
+
+    }
+
+}
+
+
+/* =====================================
+   HTMLエスケープ
+===================================== */
+
+function escapeHTML(text) {
+
+    const element =
+        document.createElement("div");
+
+    element.textContent =
+        String(text);
+
+    return element.innerHTML;
+
+}
+
+
+/* =====================================
+   起動時チェック
+===================================== */
+
+checkURLNotification();
+
+</script>
+
+</body>
+</html>
